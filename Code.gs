@@ -1585,7 +1585,7 @@ function Fiddler(sheet) {
   * @return {Fiddler} self
   */
   self.setHasHeaders = function(headers) {
-    hasHeaders_ = !!headers;dirt
+    hasHeaders_ = !!headers
     return self.init();
   };
   
