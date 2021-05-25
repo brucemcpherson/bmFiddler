@@ -1,5 +1,5 @@
 # Google Apps Script Project: bmFiddler
-This repo (bmFiddler) was automatically updated on 26/02/2021, 09:52:59 by GasGit
+This repo (bmFiddler) was automatically updated on 5/25/2021, 5:53:37 PM by GasGit
 
 For more information on gasgit, see the [desktop liberation site](https://ramblings.mcpher.com/drive-sdk-and-github/migrategasgit/ "desktop liberation")
 
@@ -17,10 +17,15 @@ The shared link for [bmFiddler is here](https://script.google.com/d/13EWG4-lPrEf
 --- | --- 
 appsscript| json
 Code| server_js
+Trackmyself| server_js
 ### Directly referenced libraries
-no libraries discovered
+*library*|*identifier*|*key*|*version*|*dev mode*|*source*|
+--- | --- | --- | --- | --- | --- 
+bmLibraryTracking| bmLibraryTracking|1GIpX-loeYv2swfT2mcYCUvduAXtoYdzenzIYXt4M_1YLmlN7eMrO1h_P|1|no|[here](libraries/bmLibraryTracking "library source")
 ### All dependencies and sub dependencies
-no libraries discovered
+*library*|*identifier*|*key*|*version*|*dev mode*|*source*|
+--- | --- | --- | --- | --- | --- 
+bmLibraryTracking| bmLibraryTracking|1GIpX-loeYv2swfT2mcYCUvduAXtoYdzenzIYXt4M_1YLmlN7eMrO1h_P|1|no|[here](libraries/bmLibraryTracking "library source")
 ### Enabled Google Services
 no libraries discovered
 ### Scopes required
