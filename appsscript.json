@@ -2,9 +2,9 @@
   "timeZone": "America/New_York",
   "dependencies": {
     "libraries": [{
-      "userSymbol": "bmLibraryTracking",
-      "libraryId": "1GIpX-loeYv2swfT2mcYCUvduAXtoYdzenzIYXt4M_1YLmlN7eMrO1h_P",
-      "version": "1"
+      "userSymbol": "bmLibraryReporter",
+      "libraryId": "1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX",
+      "version": "3"
     }]
   },
   "exceptionLogging": "STACKDRIVER",
