@@ -1,14 +1,9 @@
-// tracking usage of library snippet
-// just enter the name of the library and the version in the arguments
+// tracking usage of library snippet to a centralized store
 var Trackmyself = ((options) => {
-  const track = bmLibraryTracking.Track
-
-  const trackingOptions = {
-    ...options,
-    userStore: PropertiesService.getUserProperties(),
-    scriptStore: PropertiesService.getScriptProperties()
-  }
-  track.stamp(trackingOptions)
+  const track  = bmLibraryReporter.Trackmyself
+  
+  // this will record usage in central library store
+  track.stamp(options)
 
   // so we can get reports 
   return {
