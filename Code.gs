@@ -1599,6 +1599,7 @@ function Fiddler(sheet) {
     _values = values
     self.init()
     _resetFingerprints()
+    return self
   };
   
   /**
