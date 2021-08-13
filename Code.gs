@@ -14,17 +14,19 @@ function Fiddler(sheet) {
     _headerOb = null,
     _dataOb = [],
     _empty = true,
-    hasHeaders_ = true,
-    functions_,
-    renameDups_ = true,
-    renameBlanks_ = true,
-    blankOffset_ = 0,
-    sheet_ = null,
-    headerFormat_ = {},
-    columnFormats_ = null,
-    tidyFormats_ = false,
-    flatOptions_ = null,
-    defaultFlat = {
+    _hasHeaders = true,
+    _functions,
+    _renameDups = true,
+    _renameBlanks = true,
+    _blankOffset = 0,
+    _sheet = null,
+    _headerFormat = {},
+    _columnFormats = null,
+    _tidyFormats = false,
+    _flatOptions = null,
+    _formulaOb = null,
+    _formulas,
+    _defaultFlat = {
       flatten: true,
       objectSeparator: ".",
       itemSeparator: ",",
@@ -63,6 +65,7 @@ function Fiddler(sheet) {
   * .fiddler this object
   * .values an array of values for this row or column
   * .row an object with all the properties/values for the current row
+  * .fiddler the fiddler obkect
   */
   var defaultFunctions_ = {
 
@@ -149,7 +152,7 @@ function Fiddler(sheet) {
   };
 
   // maybe a later version we'll allow changing of default functions
-  functions_ = defaultFunctions_;
+  _functions = defaultFunctions_;
 
   // local functions
   const _isUndef = (value) => typeof value === typeof undefined
@@ -190,24 +193,35 @@ function Fiddler(sheet) {
    * @param {string|string[]} [columnName] 0 or more column names to process
    * @return {RangeValuePair[]} all you need to dump the columns
    */
-  self.dumpColumns  = (columnNames, sheet) => self.getDumper(columnNames).map(rp=>{
+  self.dumpColumns = (columnNames, sheet) => self.getDumper(columnNames).map(rp => {
     // first clear the existing data from that column
     const targetSheet = sheet || rp.range.getSheet()
     const rows = targetSheet.getDataRange().getNumRows()
-    const range = sheet 
-      ? targetSheet.getRange(rp.range.getRow(), rp.range.getColumn()).offset(0,0,rp.range.getNumRows(),rp.range.getNumColumns()) 
+    const range = sheet
+      ? targetSheet.getRange(rp.range.getRow(), rp.range.getColumn()).offset(0, 0, rp.range.getNumRows(), rp.range.getNumColumns())
       : rp.range
-    if(rows)range.offset(0,0,rows,range.getNumColumns()).clearContent()
-    
+    if (rows) range.offset(0, 0, rows, range.getNumColumns()).clearContent()
+
     // the data
     range.setValues(rp.values)
     // the header (if there is one)
-    if (self.hasHeaders())range.offset(-1,0,1,1).setValue (rp.name)
+    if (self.hasHeaders()) range.offset(-1, 0, 1, 1).setValue(rp.name)
     return {
       ...rp,
       range
     }
   })
+
+  /**
+   * get the formulas from the sheet
+   * returns {object} self for chaining
+   */
+  self.needFormulas = () => {
+    _formulas = self.getRange().getFormulas()
+    _formulaOb = _makeFormulaOb()
+    return self
+  }
+
 
   // make a digest out of anything
   self.fingerprinter = (...args) => {
@@ -315,7 +329,7 @@ function Fiddler(sheet) {
   * @param {Sheet} sheet
   */
   self.setSheet = function (sheet) {
-    sheet_ = sheet;
+    _sheet = sheet;
     return self;
   };
 
@@ -323,7 +337,7 @@ function Fiddler(sheet) {
   * @return {Sheet} sheet
   */
   self.getSheet = function () {
-    return sheet_;
+    return _sheet;
   };
 
 
@@ -343,7 +357,7 @@ function Fiddler(sheet) {
 
     // add index if function returns true
     values.forEach(function (d, i) {
-      if ((checkAFunc(func) || functions_.selectRows)(d, {
+      if ((checkAFunc(func) || _functions.selectRows)(d, {
         name: name,
         data: _dataOb,
         headers: _headerOb,
@@ -351,7 +365,8 @@ function Fiddler(sheet) {
         columnOffset: columnIndex,
         fiddler: self,
         values: values,
-        row: _dataOb[i]
+        row: _dataOb[i],
+        fiddler: self
       })) result.push(i);
     });
 
@@ -367,7 +382,7 @@ function Fiddler(sheet) {
 
     _dataOb = _dataOb.map(function (row, rowIndex) {
       var rowLength = Object.keys(row).length;
-      var result = (checkAFunc(func) || functions_.mapRows)(row, {
+      var result = (checkAFunc(func) || _functions.mapRows)(row, {
         name: rowIndex,
         data: _dataOb,
         headers: _headerOb,
@@ -377,7 +392,9 @@ function Fiddler(sheet) {
         values: self.getHeaders().map(function (k) {
           return row[k];
         }),
-        row: row
+        row: row,
+        rowFormulas: _formulaOb && _formulaOb[rowIndex],
+        fiddler: self
       });
 
       if (!result || typeof result !== "object") {
@@ -398,15 +415,15 @@ function Fiddler(sheet) {
   };
 
   self.setRenameDups = function (rename) {
-    renameDups_ = rename;
+    _renameDups = rename;
     return self;
   };
   self.setRenameBlanks = function (rename) {
-    renameBlanks_ = rename;
+    _renameBlanks = rename;
     return self;
   };
   self.setBlankOffset = function (off) {
-    blankOffset_ = off;
+    _blankOffset = off;
     return self;
   };
 
@@ -427,7 +444,7 @@ function Fiddler(sheet) {
 
   // like indexof except with custom compare
   function axof_(value, arr, compareFunc) {
-    var cf = checkAFunc(compareFunc) || functions_.compareFunc;
+    var cf = checkAFunc(compareFunc) || _functions.compareFunc;
     for (var i = 0; i < arr.length; i++) {
       if (cf(value, arr[i])) return i;
     }
@@ -465,7 +482,7 @@ function Fiddler(sheet) {
 
       return !soFar.some(function (e) {
         return cols.every(function (f) {
-          return (checkAFunc(compareFunc) || functions_.compareFunc)(d[f], e[f]);
+          return (checkAFunc(compareFunc) || _functions.compareFunc)(d[f], e[f]);
         });
       });
 
@@ -484,7 +501,7 @@ function Fiddler(sheet) {
    * @return self
    */
   self.setHeaderFormat = function (headerFormat) {
-    headerFormat_ = headerFormat;
+    _headerFormat = headerFormat;
     return self;
   };
 
@@ -509,10 +526,10 @@ function Fiddler(sheet) {
    * clear given column formats
    */
   self.clearColumnFormats = function (columnNames) {
-    columnFormats_ = columnFormats_ || {};
+    _columnFormats = _columnFormats || {};
     _patchColumnNames(columnNames)
       .forEach(function (d) {
-        columnFormats_[d] = null;
+        _columnFormats[d] = null;
       });
     return self;
   };
@@ -520,7 +537,7 @@ function Fiddler(sheet) {
    * get all known columnFormats
    */
   self.getColumnFormats = function () {
-    return columnFormats_;
+    return _columnFormats;
   };
 
   /**
@@ -529,10 +546,14 @@ function Fiddler(sheet) {
    * @return self
    */
   self.setTidyFormats = function (tidyFormats) {
-    tidyFormats_ = tidyFormats;
+    _tidyFormats = tidyFormats;
     return self;
   };
 
+  /** 
+   * this can be handy for chaining 
+   */
+  self.getSelf = () => self
 
   /**
    * get tidy formats
@@ -551,9 +572,9 @@ function Fiddler(sheet) {
     // validate them
     columnNames = _patchColumnNames(columnNames);
     // a non-null column format means we actually have an interest in columnformats
-    columnFormats_ = columnFormats_ || {};
+    _columnFormats = _columnFormats || {};
     // apply them
-    columnNames.forEach(function (d) { columnFormats_[d] = columnFormat });
+    columnNames.forEach(function (d) { _columnFormats[d] = columnFormat });
     return self;
   };
 
@@ -621,14 +642,14 @@ function Fiddler(sheet) {
   /**
    * apply header formats
    * @param {Range} range the start range for the headers
-   * @param {object} [format=headerFormat_] the format object
+   * @param {object} [format= _headerFormat] the format object
    * @return self;
    */
   self.applyHeaderFormat = function (range, format) {
     if (!self.getNumColumns()) return self;
-    format = format || headerFormat_;
+    format = format || _headerFormat;
     var rangeList = self.makeRangeList([range.offset(0, 0, 1, self.getNumColumns())], { numberOfRows: 1 }, range.getSheet());
-    return self.setRangelistFormat(rangeList, headerFormat_);
+    return self.setRangelistFormat(rangeList, _headerFormat);
   };
 
   /**
@@ -639,7 +660,7 @@ function Fiddler(sheet) {
   self.applyColumnFormats = function (range) {
     var foCollect = [];
 
-    if (columnFormats_) {
+    if (_columnFormats) {
       // we'll need this later
       var dr = range.getSheet().getDataRange();
       var atr = dr.getNumRows();
@@ -647,7 +668,7 @@ function Fiddler(sheet) {
       if (self.hasHeaders() && atr > 1) {
         dr = dr.offset(1, 0, atr - 1);
       }
-      if (Object.keys(columnFormats_).length === 0) {
+      if (Object.keys(_columnFormats).length === 0) {
         // this means clear format for entire thing
         dr.clearFormat();
       }
@@ -659,9 +680,9 @@ function Fiddler(sheet) {
         }
 
         if (self.getNumRows()) {
-          Object.keys(columnFormats_)
+          Object.keys(_columnFormats)
             .forEach(function (d) {
-              var o = columnFormats_[d];
+              var o = _columnFormats[d];
               // validate still exists
               var h = self.getHeaders().indexOf(d);
               if (h !== -1) {
@@ -681,7 +702,7 @@ function Fiddler(sheet) {
               }
               else {
                 // delete it as column is now gone
-                delete columnFormats_[d];
+                delete _columnFormats[d];
               }
             });
         }
@@ -740,7 +761,7 @@ function Fiddler(sheet) {
    * @return self
    */
   self.getHeaderFormat = function () {
-    return headerFormat_;
+    return _headerFormat;
   };
 
   /**
@@ -751,7 +772,7 @@ function Fiddler(sheet) {
   self.filterRows = function (func) {
 
     _dataOb = _dataOb.filter(function (row, rowIndex) {
-      return (checkAFunc(func) || functions_.filterRows)(row, {
+      return (checkAFunc(func) || _functions.filterRows)(row, {
         name: rowIndex,
         data: _dataOb,
         headers: _headerOb,
@@ -847,7 +868,7 @@ function Fiddler(sheet) {
 
     values.forEach(function (value, rowIndex) {
 
-      _dataOb[rowIndex][name] = (checkAFunc(func) || functions_.mapColumns)(value, {
+      _dataOb[rowIndex][name] = (checkAFunc(func) || _functions.mapColumns)(value, {
         name: name,
         data: _dataOb,
         headers: _headerOb,
@@ -855,7 +876,8 @@ function Fiddler(sheet) {
         columnOffset: columnIndex,
         fiddler: self,
         values: values,
-        row: _dataOb[rowIndex]
+        row: _dataOb[rowIndex],
+        fiddler: self
       });
 
     });
@@ -870,20 +892,23 @@ function Fiddler(sheet) {
   */
   self.mapColumns = function (func) {
 
-    var columnWise = columnWise_();
+    var columnWise = _columnWise();
+    const columnWiseFormula = _columnWiseFormula
     var oKeys = Object.keys(columnWise);
 
     oKeys.forEach(function (key, columnIndex) {
       // so we can check for a change
       var hold = columnWise[key].slice();
-      var result = (checkAFunc(func) || functions_.mapColumns)(columnWise[key], {
+      var result = (checkAFunc(func) || _functions.mapColumns)(columnWise[key], {
         name: key,
         data: _dataOb,
         headers: _headerOb,
         rowOffset: 0,
         columnOffset: columnIndex,
         fiddler: self,
-        values: columnWise[key]
+        values: columnWise[key],
+        formulas: columnWiseFormula && columnWiseFormula[key],
+        fiddler: self
       });
 
       // changed no of rows?
@@ -914,20 +939,21 @@ function Fiddler(sheet) {
       throw new Error('this fiddler has no headers so you cant change them');
     }
 
-    var columnWise = columnWise_();
+    var columnWise = _columnWise();
     var oKeys = Object.keys(columnWise);
     var nKeys = [];
 
     oKeys.forEach(function (key, columnIndex) {
 
-      var result = (checkAFunc(func) || functions_.mapHeaders)(key, {
+      var result = (checkAFunc(func) || _functions.mapHeaders)(key, {
         name: key,
         data: _dataOb,
         headers: _headerOb,
         rowOffset: 0,
         columnOffset: columnIndex,
         fiddler: self,
-        values: columnWise[key]
+        values: columnWise[key],
+        fiddler: self
       });
 
       // deleted the header
@@ -964,19 +990,20 @@ function Fiddler(sheet) {
   self.filterColumns = function (func) {
     checkAFunc(func);
 
-    var columnWise = columnWise_();
+    var columnWise = _columnWise();
     var oKeys = Object.keys(columnWise);
 
     // now filter out any columns
     var nKeys = oKeys.filter(function (key, columnIndex) {
-      var result = (checkAFunc(func) || functions_.filterColumns)(key, {
+      var result = (checkAFunc(func) || _functions.filterColumns)(key, {
         name: key,
         data: _dataOb,
         headers: _headerOb,
         rowOffset: 0,
         columnOffset: columnIndex,
         fiddler: self,
-        values: self.getColumnValues(key)
+        values: self.getColumnValues(key),
+        fiddler: self
       });
       return result;
     });
@@ -994,20 +1021,22 @@ function Fiddler(sheet) {
 
   //-----
 
+  const _columnate = (ob,columnName) => {
+    if (self.getHeaders().indexOf(columnName) === -1) {
+      throw new Error(columnName + ' is not a valid header name');
+    }
+    // transpose the data
+    return  ob.map(function (d) {
+      return d[columnName];
+    });
+  }
   /**
   * get the values for a given column
   * @param {string} columnName the given column
   * @return {*[]} the column values
   */
-  self.getColumnValues = function (columnName) {
-    if (self.getHeaders().indexOf(columnName) === -1) {
-      throw new Error(columnName + ' is not a valid header name');
-    }
-    // transpose the data
-    return _dataOb.map(function (d) {
-      return d[columnName];
-    });
-  };
+  self.getColumnValues =  (columnName) => _columnate (_dataOb, columnName);
+  self.getColumnFormulaValues =  (columnName) => _formulaOb && _columnate (_formulaOb, columnName);
 
   /**
   * get the values for a given row
@@ -1038,7 +1067,7 @@ function Fiddler(sheet) {
       throw new Error('must supply an existing header of column to move');
     }
 
-    var columnOffset = insertColumn_(newHeader, insertBefore);
+    _insertColumn(newHeader, insertBefore);
 
     // copy the data
     self.mapColumns(function (values, properties) {
@@ -1073,8 +1102,8 @@ function Fiddler(sheet) {
    */
   function dump_values(sheet, options) {
 
-    if (!sheet && !sheet_) throw 'sheet not found to dump values to';
-    var range = (sheet || sheet_).getDataRange();
+    if (!sheet && !_sheet) throw 'sheet not found to dump values to';
+    var range = (sheet || _sheet).getDataRange();
     if (!options.skipValues && !options.columnNames) range.clearContent();
 
     // if we're flattening then we need to do some fiddling with the data
@@ -1086,7 +1115,7 @@ function Fiddler(sheet) {
     var v = self.createValues();
 
     // we need to clear any formatting outside the ranges that may have been deleted
-    if (tidyFormats_ && !options.skipFormats) {
+    if (_tidyFormats && !options.skipFormats) {
       var rtc = r.getNumColumns();
       var rtr = range.getNumRows();
       var atc = range.getNumColumns();
@@ -1103,7 +1132,7 @@ function Fiddler(sheet) {
 
     // write out the sheet if there's anything
     if (!options.skipValues && v.length && v[0].length) {
-      if(!options.columnNames) {
+      if (!options.columnNames) {
         r.setValues(v);
       } else {
         // we're doing selected ranges only
@@ -1161,6 +1190,32 @@ function Fiddler(sheet) {
     return index < 0 ? headers[headers.length + index] : headers[index];
   };
 
+  self.getColumnsWithFormulas = () => {
+    if(!self.getFormulaData()) throw new Error (`First use needFormulas() to bring in formulas before changing anything`)
+
+    // now find which columns have any formulas
+    return Array.from(self.getHeaders().reduce ((p,c)=> {
+      if (self.getFormulaData().some(f=>f[c])) p.add(c)
+      return p
+    }, new Set()))
+  }
+
+  /**
+   * get a an a1 type range and add the sheet if required for a group of columns
+   * @params {object} args
+   * @param {sheet} args.sheet optional sheet if not for the current fiddler sheet
+   * @param {string[]} [args.columnNames=*] default is all of them
+   * @param {object} [args.options={rowOffset:1,numberOfRows:1,columnOffset:1,numberOfColumns:1}]
+   * @param {boolean} [args.includeSheetName = false]
+   * @returns {string[]}
+   */
+  self.getA1s = ({columnNames , options , sheet, includeSheetName = false}) => 
+    self.getRangeList(columnNames , options , sheet)
+      .getRanges()
+      .map (r=> {
+        return (includeSheetName ? `'${r.getSheet().getName()}'!` : '') + r.getA1Notation()
+      })
+  
   /**
    * get the names of columns occurring between start and finish
    * @param {string} [start=the first one] start column name (or the first one)
@@ -1187,7 +1242,7 @@ function Fiddler(sheet) {
    */
   self.getRangeList = function (columnNames, options, sheet) {
     options = options || {};
-    sheet = sheet || sheet_;
+    sheet = sheet || _sheet;
     if (!sheet) throw 'sheet must be provided to getRangeList';
     var range = self.getRange(sheet.getDataRange());
 
@@ -1243,7 +1298,7 @@ function Fiddler(sheet) {
   self.makeRangeList = function (ranges, options, sheet) {
 
     options = options || {};
-    sheet = sheet || sheet_;
+    sheet = sheet || _sheet;
     if (!sheet) throw 'sheet must be provided to makeRangeList';
 
     // default options are the whole datarange for each column
@@ -1291,8 +1346,8 @@ function Fiddler(sheet) {
   * @return {Range} the range needed
   */
   self.getRange = function (range) {
-    if (!range && !sheet_) throw 'must set a default sheet or specify a range';
-    range = range || sheet_.getDataRange();
+    if (!range && !_sheet) throw 'must set a default sheet or specify a range';
+    range = range || _sheet.getDataRange();
     // simulate a single cell range for a blank sheet
     return self.getNumColumns() ? range.offset(0, 0, self.getNumRows() + (self.hasHeaders() ? 1 : 0), self.getNumColumns()) : range.offset(0, 0, 1, 1);
   }
@@ -1340,7 +1395,7 @@ function Fiddler(sheet) {
   * @param {string} [insertBefore] name of the header to insert befire, undefined for end 
   * @return {number} the offset if the column that was inserted
   */
-  function insertColumn_(header, insertBefore) {
+  function _insertColumn(header, insertBefore) {
 
     // the headers
     var headers = self.getHeaders();
@@ -1397,7 +1452,7 @@ function Fiddler(sheet) {
   self.insertColumn = function (header, insertBefore) {
 
     // the headers
-    insertColumn_(header, insertBefore);
+    _insertColumn(header, insertBefore);
     return self;
 
   }
@@ -1467,17 +1522,20 @@ function Fiddler(sheet) {
       return p;
     }, {});
   }
+
+  const _cwise = (func) => {
+    // first transpose the data
+    return Object.keys(_headerOb).reduce(function (tob, key) {
+      tob[key] = func(key);
+      return tob;
+    }, {});
+  }
   /**
   * create a column slice of values
   * @return {object} the column slice
   */
-  function columnWise_() {
-    // first transpose the data
-    return Object.keys(_headerOb).reduce(function (tob, key) {
-      tob[key] = self.getColumnValues(key);
-      return tob;
-    }, {});
-  }
+  const _columnWise = () => _cwise(self.getColumnValues)
+  const _columnWiseFormula = () => _cwise(self.getColumnFormulaValues)
 
   /**
   * will create a new dataob with columns dropped that are not in newKeys
@@ -1575,6 +1633,13 @@ function Fiddler(sheet) {
   };
 
   /**
+  * return the formulas
+  * @return {object[]} as rowwise kv pairs 
+  */
+  self.getFormulaData = function () {
+    return _formulaOb;
+  };
+  /**
   * replace the current data in the fiddle
   * will also update the headerOb
   * @param {object[]} dataOb the new dataOb
@@ -1616,9 +1681,12 @@ function Fiddler(sheet) {
   * @return {Fiddle} self
   */
   self.init = function () {
+    // how to handle multi level dataa
+    self.setFlattener(_defaultFlat) 
+
     if (_values) {
       _headerOb = make_headerOb();
-      _dataOb = make_dataOb();
+      _dataOb = _makeDataOb();
       _empty = false
     } else {
       _headerOb = null;
@@ -1634,7 +1702,7 @@ function Fiddler(sheet) {
   * @return {boolean} whether a fiddle has headers
   */
   self.hasHeaders = function () {
-    return hasHeaders_;
+    return _hasHeaders;
   };
 
   /**
@@ -1643,7 +1711,7 @@ function Fiddler(sheet) {
   * @return {Fiddler} self
   */
   self.setHasHeaders = function (headers) {
-    hasHeaders_ = !!headers
+    _hasHeaders = !!headers
     return self.init();
   };
 
@@ -1704,9 +1772,9 @@ function Fiddler(sheet) {
       .reduce(function (p, c) {
 
         var key = c.toString();
-        if (renameBlanks_ && !key) {
+        if (_renameBlanks && !key) {
           // intercept blank name and use column a notation for it
-          key = columnLabelMaker_(Object.keys(p).length + 1 + blankOffset_);
+          key = columnLabelMaker_(Object.keys(p).length + 1 + _blankOffset);
 
         }
         if (p.hasOwnProperty(key)) {
@@ -1731,13 +1799,13 @@ function Fiddler(sheet) {
   }
 
   /**
-  * make a map of data
+  * make a map of data and formulas
   * @return {object} a data ob.
   */
-  function make_dataOb() {
+  function _makeOb(values) {
 
     // get rid of the headers if there are any
-    var vals = self.hasHeaders() ? _values.slice(1) : _values;
+    var vals = self.hasHeaders() ? values.slice(1) : values;
 
     // make an array of kv pairs
     return _headerOb ?
@@ -1748,6 +1816,15 @@ function Fiddler(sheet) {
         }, {})
       })) : null;
   }
+
+  /**
+  * make a map of data and formulas
+  * @return {object} a data ob.
+  */
+  const _makeDataOb = () => _makeOb(_values)
+  const _makeFormulaOb = () => _makeOb(_formulas)
+
+
 
   /**
   * make values from the dataOb
