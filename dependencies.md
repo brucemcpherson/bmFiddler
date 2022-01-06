@@ -1,5 +1,5 @@
 # Google Apps Script Project: bmFiddler
-This repo (bmFiddler) was automatically updated on 8/13/2021, 3:42:26 PM by GasGit
+This repo (bmFiddler) was automatically updated on 1/6/2022, 4:39:20 PM by GasGit
 
 For more information on gasgit, see the [desktop liberation site](https://ramblings.mcpher.com/drive-sdk-and-github/migrategasgit/ "desktop liberation")
 
@@ -21,11 +21,12 @@ Trackmyself| server_js
 ### Directly referenced libraries
 *library*|*identifier*|*key*|*version*|*dev mode*|*source*|
 --- | --- | --- | --- | --- | --- 
-bmLibraryReporter| bmLibraryReporter|1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX|8|no|no
+bmLibraryReporter| bmLibraryReporter|1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX|8|no|[here](libraries/bmLibraryReporter "library source")
 ### All dependencies and sub dependencies
 *library*|*identifier*|*key*|*version*|*dev mode*|*source*|
 --- | --- | --- | --- | --- | --- 
-bmLibraryReporter| bmLibraryReporter|1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX|8|no|no
+bmLibraryReporter| bmLibraryReporter|1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX|8|no|[here](libraries/bmLibraryReporter "library source")
+bmLibraryTracking| bmLibraryTracking|1GIpX-loeYv2swfT2mcYCUvduAXtoYdzenzIYXt4M_1YLmlN7eMrO1h_P|3|no|[here](libraries/bmLibraryTracking "library source")
 ### Enabled Google Services
 no libraries discovered
 ### Scopes required
