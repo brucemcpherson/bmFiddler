@@ -26,6 +26,8 @@ const Utils = (()=>{
     return arbitraryString + new Date().getTime().toString(32);
   };
 
+ const obfuscate = ({id, salt}) => Utilities.computeDigest(Utilities.DigestAlgorithm.MD2, id + salt);
+
   const runner = ({action, failSilently}) => {
     try {
       return action () 
@@ -38,6 +40,7 @@ const Utils = (()=>{
     validateOptions,
     generateUniqueString,
     removeUndef,
-    runner
+    runner,
+    obfuscate
   }
 })()
