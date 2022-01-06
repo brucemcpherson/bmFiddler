@@ -13,10 +13,13 @@ var Trackmyself = ((options) => {
   // so we can get reports 
   return {
     exportUsage: (options = {}) => track.scriptReport({...trackingOptions,...options}),
-    currentUserUsage: (options = {}) => track.userReport({...trackingOptions, ...options})
+    currentUserUsage: (options = {}) => track.userReport({...trackingOptions, ...options}),
+    getAllVisits: () => track.getAllVisits(trackingOptions),
+    getAllScriptUsage: ()=> track.getAllScriptUsage(trackingOptions),
+    getVisitorReport: ()=> track.getVisitorReport(trackingOptions)
   }
   
 })({
   name: 'bmLibraryTracking',
-  version: '2'
+  version: '3'
 })
