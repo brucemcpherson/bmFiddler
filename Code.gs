@@ -1778,7 +1778,7 @@ function Fiddler(sheet) {
 
         }
         if (p.hasOwnProperty(key)) {
-          if (!renameDups_) {
+          if (!_renameDups) {
             throw 'duplicate column header ' + key;
           } else {
             // generate a unique name
