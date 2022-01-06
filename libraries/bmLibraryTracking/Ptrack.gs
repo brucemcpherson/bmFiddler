@@ -1,7 +1,12 @@
 class Ptrack {
-  constructor(options = {}) {
-    this.options = Utils.validateOptions({
+  constructor(options) {
+    this.options = this.validateOptions(options)
+  }
+
+  validateOptions (options = {} ) {
+    return  Utils.validateOptions({
       opts: new Map([
+        ['prefix', ''],
         ['meta', null],
         ['name', ''],
         ['trackerVersion', 'v1.2'],
@@ -10,12 +15,12 @@ class Ptrack {
         ['userStore', null],
         ['scriptStore', null],
         ['scriptKey', ''],
+        ['visitorKey', ''],
         ['failSilently', true]]),
       options,
-      thisOptions: this.options
+      thisOptions: this.options || {}
     })
   }
-
   incrementScript(userVisit) {
     let value = this.getScriptReport()
     if (!value) {
@@ -48,53 +53,98 @@ class Ptrack {
   }
 
   recordVersion({ value, userVisit }) {
-    let v = value.versions.find(f => userVisit.version === f.version)
+    let v = value.versions.find(f => userVisit.version === f.versionId)
     if (!v) {
       v = {
-        version: userVisit.version,
-        firsVisit: userVisit.lastVisit,
-        visits: 0
+        versionId: userVisit.version,
+        versionFirstVisit: userVisit.lastVisit,
+        versionVisits: 0
       }
       value.versions.push(v)
     }
-    v.lastVisit = userVisit.lastVisit
-    v.visits++
+    v.versionLastVisit = userVisit.lastVisit
+    v.versionVisits++
     return v
   }
 
   /**
+   * get all the entries for a given user
+   */
+  getAllVisits() {
+    // get all the proerties with this prefix
+    const value = this.makeVisitor()
+    const props = this.options.userStore.getProperties()
+    return Object.keys(props).filter(f => f.startsWith(this.options.prefix)).map(f => JSON.parse(props[f])).filter(f => value.userId === f.userId)
+  }
+
+  /**
+   * get all script usage 
+   */
+  getAllScriptUsage() {
+    // get all the proerties with this prefix
+    const props = this.options.scriptStore.getProperties()
+    return Object.keys(props).filter(f => f.startsWith(this.options.prefix)).map(f => JSON.parse(props[f]))
+  }
+  /** 
+  * make a visitor record
+  */
+  makeVisitor() {
+    let value = this.getVisitorReport()
+    const now = new Date().getTime()
+    if (!value) {
+      value = {
+        userId: Utils.generateUniqueString(),
+        firstVisit: now,
+        visits: 0
+      }
+
+    }
+    value.lastVisit = now
+    value.visits++;
+    this.putToStore({ store: this.options.userStore, key: this.options.visitorKey, value })
+    return value
+  }
+  /**
    * update or set user store
    */
   incrementUser(visitMeta) {
+    // there'll be just one of these in each user propertyStore
+    // the reason it's a separate thing is so that if multiple tracking is being done in the same store
+    // we can tie them together
+    const visitor = this.makeVisitor()
+
+    // this userreport is specific to the name being tracked
+    // so there could be multiple per store, all tied together via the userId
     let value = this.getUserReport()
     const now = new Date().getTime()
 
     if (!value) {
       value = {
-        userId: Utils.generateUniqueString(),
+        userId: visitor.userId,
         visits: 0,
         firstVisit: now,
         name: this.options.name,
         userKey: this.options.userKey,
         versions: []
       }
+
     }
     // maybe there's a meta upgrade, otherwise leave as is
     if (this.options.meta) value.meta = this.options.meta
     value.version = this.options.version
 
     // deal with legacy potental missing versions array
-    if(!value.versions) value.versions = []
+    if (!value.versions) value.versions = []
 
     value.lastVisit = now
     value.visits++;
 
     // this could be used to track changes in tracking model
     value.trackerVersion = this.options.trackerVersion
-    
+
     // always clear out the visit metadata if there's nothing this time
     value.visitMeta = visitMeta || undefined
-    
+
     // record all seen versions, plus first and last time seen
     this.recordVersion({ value, userVisit: value })
     const scriptValue = this.incrementScript(value)
@@ -103,15 +153,16 @@ class Ptrack {
     return value;
   }
   clearUserHistory() {
-    console.log('clearing', this.options.userKey, 'user')
     return this.options.userStore.deleteProperty(this.options.userKey)
   }
   clearScriptHistory() {
-    console.log('clearing', this.options.userKey, 'script')
     return this.options.scriptStore.deleteProperty(this.options.scriptKey)
   }
   getUserReport() {
     return this.getFromStore({ store: this.options.userStore, key: this.options.userKey })
+  }
+  getVisitorReport() {
+    return this.getFromStore({ store: this.options.userStore, key: this.options.visitorKey })
   }
   getScriptReport() {
     return this.getFromStore({ store: this.options.scriptStore, key: this.options.scriptKey })
@@ -126,6 +177,7 @@ class Ptrack {
     })
   }
   putToStore({ store, key, value }) {
+
     return Utils.runner({
       action: () => store.setProperty(key, JSON.stringify(value)),
       failSilently: this.options.failSilently
