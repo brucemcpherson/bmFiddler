@@ -1,25 +1,43 @@
 // tracking usage of library snippet
-// just enter the name of the library and the version in the arguments
-var Trackmyself = ((options) => {
+var Trackmyself = ((basicOptions) => {
+
   const track = Track
 
-  const trackingOptions = {
-    ...options,
-    userStore: PropertiesService.getUserProperties(),
-    scriptStore: PropertiesService.getScriptProperties()
-  }
-  track.stamp(trackingOptions)
+  const getTrackingOptions = (options = {}) => {
 
-  // so we can get reports 
-  return {
-    exportUsage: (options = {}) => track.scriptReport({...trackingOptions,...options}),
-    currentUserUsage: (options = {}) => track.userReport({...trackingOptions, ...options}),
-    getAllVisits: () => track.getAllVisits(trackingOptions),
-    getAllScriptUsage: ()=> track.getAllScriptUsage(trackingOptions),
-    getVisitorReport: ()=> track.getVisitorReport(trackingOptions)
+    try {
+      return {
+        ...basicOptions,
+        userStore: PropertiesService.getUserProperties(),
+        scriptStore: PropertiesService.getScriptProperties(),
+        ...options
+      }
+    }
+    catch (err) {
+      if (basicOptions.failSilently) return {}
+      throw new Error(err)
+    }
   }
-  
+
+  // optionally record usage of this script
+  // this could generate a bunch of traffic you are not interested in
+  // if you have a lof of libraries aggregating
+  // however it will allow you to track unique users across all your libraries
+  // track.stamp(trackingOptions)
+
+  // so we can get reports to report on other scripts
+  return {
+    exportUsage: (options = {}) => track.scriptReport(getTrackingOptions(options)),
+    currentUserUsage: (options = {}) => track.userReport(getTrackingOptions(options)),
+    getAllVisits: () => track.getAllVisits(getTrackingOptions()),
+    stamp: (options = {}) => track.stamp(getTrackingOptions(options)),
+    getAllScriptUsage: () => track.getAllScriptUsage(getTrackingOptions()),
+    getVisitorReport: () => track.getVisitorReport(getTrackingOptions())
+  }
+
 })({
   name: 'bmLibraryTracking',
-  version: '3'
+  version: '7',
+  failSilently: true,
+  singleStamp: true
 })
