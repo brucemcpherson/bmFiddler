@@ -9,6 +9,10 @@
 */
 function Fiddler(sheet) {
 
+  // for library tracking
+  // will only stamp once
+  Trackmyself.stamp()
+
   var self = this;
   var _values,
     _headerOb = null,
