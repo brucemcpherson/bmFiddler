@@ -1,15 +1,17 @@
 class Ptrack {
   constructor(options) {
     this.options = this.validateOptions(options)
+    this.stamped = false
   }
 
   validateOptions (options = {} ) {
     return  Utils.validateOptions({
       opts: new Map([
+        ['singleStamp', true],
         ['prefix', ''],
         ['meta', null],
         ['name', ''],
-        ['trackerVersion', 'v1.2'],
+        ['trackerVersion', 'v1.3'],
         ['version', '1'],
         ['userKey', ''],
         ['userStore', null],
@@ -108,6 +110,9 @@ class Ptrack {
    * update or set user store
    */
   incrementUser(visitMeta) {
+    // if it's already been stamped, don't do it again
+    if (this.options.singleStamp && this.stamped) return null;
+    
     // there'll be just one of these in each user propertyStore
     // the reason it's a separate thing is so that if multiple tracking is being done in the same store
     // we can tie them together
@@ -150,6 +155,7 @@ class Ptrack {
     const scriptValue = this.incrementScript(value)
     value.scriptId = scriptValue.scriptId
     this.putToStore({ store: this.options.userStore, key: this.options.userKey, value })
+    this.stamped = true;
     return value;
   }
   clearUserHistory() {
