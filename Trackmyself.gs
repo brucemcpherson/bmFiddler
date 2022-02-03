@@ -2,18 +2,17 @@
 var Trackmyself = ((trackingOptions) => {
   const track  = bmLibraryReporter.Trackmyself
   
-  // this will record usage in central library store
-  track.stamp(trackingOptions)
-
   // so we can get reports 
   return {
-    exportUsage: (options = {}) => track.scriptReport({...trackingOptions,...options}),
-    currentUserUsage: (options = {}) => track.userReport({...trackingOptions,...options})
+    exportUsage: (options = {}) => track.exportUsage({...trackingOptions,...options}),
+    currentUserUsage: (options = {}) => track.currentUserUsage({...trackingOptions,...options}),
+    stamp: ()=>track.stamp(trackingOptions)
   }
   
 })({
   name: 'bmFiddler',
-  version: '20',
-  failSilently: false
+  version: '25',
+  failSilently: true,
+  singleStamp: true
 })
 
