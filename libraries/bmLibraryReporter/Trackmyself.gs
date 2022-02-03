@@ -1,11 +1,22 @@
 // tracking usage of library snippet
-var Trackmyself = ((options) => {
+var Trackmyself = ((basicOptions) => {
+
   const track = bmLibraryTracking.Track
 
-  const trackingOptions = {
-    ...options,
-    userStore: PropertiesService.getUserProperties(),
-    scriptStore: PropertiesService.getScriptProperties()
+  const getTrackingOptions = (options = {}) => {
+
+    try {
+      return {
+        ...basicOptions,
+        userStore: PropertiesService.getUserProperties(),
+        scriptStore: PropertiesService.getScriptProperties(),
+        ...options
+      }
+    }
+    catch (err) {
+      if (basicOptions.failSilently) return {}
+      throw new Error(err)
+    }
   }
 
   // optionally record usage of this script
@@ -16,22 +27,23 @@ var Trackmyself = ((options) => {
 
   // so we can get reports to report on other scripts
   return {
-    exportUsage: (options = {}) => track.scriptReport({...trackingOptions,...options}),
-    currentUserUsage: (options = {}) => track.userReport({...trackingOptions, ...options}),
-    getAllVisits: () => track.getAllVisits(trackingOptions),
+    exportUsage: (options = {}) => track.scriptReport(getTrackingOptions(options)),
+    currentUserUsage: (options = {}) => track.userReport(getTrackingOptions(options)),
+    getAllVisits: () => track.getAllVisits(getTrackingOptions()),
     // this can be used to centralize trackin of other libraries
-    stamp: (options = {}) => track.stamp({...trackingOptions, ...options}),
+    stamp: (options = {}) => track.stamp(getTrackingOptions(options)),
     // danger: just for testing only - clear out all stores
     deleteAllProperties: () => {
       trackingOptions.userStore.deleteAllProperties()
       trackingOptions.scriptStore.deleteAllProperties()
     },
-    getAllScriptUsage: ()=> track.getAllScriptUsage(trackingOptions),
-    getVisitorReport: ()=>track.getVisitorReport(trackingOptions)
+    getAllScriptUsage: () => track.getAllScriptUsage(getTrackingOptions()),
+    getVisitorReport: () => track.getVisitorReport(getTrackingOptions())
   }
-  
+
 })({
   name: 'bmLibraryReporter',
-  version: '8',
-  failSilently: false
+  version: '13',
+  failSilently: true,
+  singleStamp: true
 })
