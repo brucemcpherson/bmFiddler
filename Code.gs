@@ -30,6 +30,7 @@ function Fiddler(sheet) {
     _flatOptions = null,
     _formulaOb = null,
     _formulas,
+    _custom = null,
     _defaultFlat = {
       flatten: true,
       objectSeparator: ".",
@@ -173,6 +174,21 @@ function Fiddler(sheet) {
    * @property {*[[]} values - The  values - ready for use with setValues
    * @property {Range} range - The range it applies to
    */
+
+  /**
+   * set a custom value in the fiddler - can be anything
+   * @param {*} value value to set
+   * @return {Fiddler} self
+   */
+  self.setCustom = (value) => {
+    _custom = value;
+    return self;
+  }
+  /**
+   * get a custom value in the fiddler - can be anything
+   * @return {*} custom value
+   */
+  self.getCustom = () => _custom
 
   /**
    * convert columns to values
