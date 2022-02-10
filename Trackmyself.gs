@@ -11,7 +11,7 @@ var Trackmyself = ((trackingOptions) => {
   
 })({
   name: 'bmFiddler',
-  version: '25',
+  version: '26',
   failSilently: true,
   singleStamp: true
 })
