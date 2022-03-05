@@ -72,7 +72,7 @@ function Fiddler(sheet) {
   * .row an object with all the properties/values for the current row
   * .fiddler the fiddler obkect
   */
-  var defaultFunctions_ = {
+  var _defaultFunctions = {
 
     /**
      * used to compare two values
@@ -157,7 +157,7 @@ function Fiddler(sheet) {
   };
 
   // maybe a later version we'll allow changing of default functions
-  _functions = defaultFunctions_;
+  _functions = _defaultFunctions;
 
   // local functions
   const _isUndef = (value) => typeof value === typeof undefined
@@ -383,7 +383,6 @@ function Fiddler(sheet) {
         headers: _headerOb,
         rowOffset: i,
         columnOffset: columnIndex,
-        fiddler: self,
         values: values,
         row: _dataOb[i],
         fiddler: self
@@ -408,7 +407,6 @@ function Fiddler(sheet) {
         headers: _headerOb,
         rowOffset: rowIndex,
         columnOffset: 0,
-        fiddler: self,
         values: self.getHeaders().map(function (k) {
           return row[k];
         }),
@@ -651,7 +649,8 @@ function Fiddler(sheet) {
       Object.keys(format).forEach(function (f) {
         var method = 'set' + f.slice(0, 1).toUpperCase() + f.slice(1);
         // patch in case its plural 
-        method = method.replace(/s$/, "").replace(/ies$/, "y");
+        // https://github.com/brucemcpherson/bmFiddler/issues/2 - v29
+        method = method.replace(/ies$/, "y").replace(/s$/, "");
         if (typeof rangeList[method] !== "function") throw 'unknown format ' + method;
         rangeList[method](format[f]);
       })
