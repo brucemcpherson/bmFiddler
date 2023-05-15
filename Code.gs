@@ -573,6 +573,12 @@ function Fiddler(sheet) {
    */
   self.getSelf = () => self
 
+
+  /**
+   * apply filter when getting values
+   */
+
+
   /**
    * get tidy formats
    * @return {boolean} tidyFormats whether to tidy formats in space outside the data being written
@@ -1108,8 +1114,10 @@ function Fiddler(sheet) {
     // get the range 
     var range = sheet.getDataRange();
 
+    const values = range.getValues()
+
     // set the values
-    return self.setValues(range.getValues());
+    return self.setValues(values);
 
   };
 
