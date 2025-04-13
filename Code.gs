@@ -608,7 +608,7 @@ function Fiddler(sheet) {
    * @return self
    */
   self.setFlattener = function (options) {
-    flattenOptions_ = options;
+    _flatOptions = options;
     return self;
   };
 
@@ -618,7 +618,7 @@ function Fiddler(sheet) {
    * @return self
    */
   self.getFlattener = function (options) {
-    return flattenOptions_;
+    return _flatOptions;
   };
 
   /**
