@@ -4,14 +4,15 @@
 * this is a utility for messing around with 
 * values obtained from setValues method 
 * of a spreadsheet
-* @contructor Fiddler
+* @contructor Fiddler   
 * @param {Sheet} [sheet=null] populate the fiddler 
 */
 function Fiddler(sheet) {
 
   // for library tracking
   // will only stamp once
-  Trackmyself.stamp()
+  // now deprecdated
+  ///Trackmyself.stamp()
 
   var self = this;
   var _values,
