@@ -2,14 +2,5 @@
   "timeZone": "America/New_York",
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "dependencies": {
-    "libraries": [
-      {
-        "userSymbol": "bmLibraryReporter",
-        "libraryId": "1D_lWK-jU53wxMA2-NxSjiyu7Uze_GDDqBKTsQnCgPhyUmmSLv0bfTNPX",
-        "version": "14",
-        "developmentMode": false
-      }
-    ]
-  }
+  "dependencies": {}
 }
